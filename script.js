@@ -182,7 +182,8 @@ function tick() {
       step = 1; break;
     case 1: // T1: MDR ← mem[MAR]
       mdr = readMemory(mar); signal = 'Read';
-      setActive(['reg-mar', 'mem-' + mar, 'reg-mdr', 'bus-dados', 'd-mar', 'd-mem', 'd-mdr', 'd-w-mar-mem', 'd-w-mem-mdr']);
+      setActive(['reg-mar', 'reg-mdr', 'bus-dados', 'd-mar', 'd-cache', 'd-mdr', 'd-w-mar-mem', 'd-w-cache-mdr']
+        .concat(lastHit ? [] : ['mem-' + mar, 'd-mem', 'd-w-mem-cache']));
       log('T1 · MDR ← mem[' + hex2(mar) + ']  = ' + bin8(mdr) + (lastHit ? ' · cache HIT' : ' · cache MISS'));
       step = 2; break;
     case 2: // T2: IR ← MDR
@@ -232,7 +233,8 @@ function tick() {
     case 6: // T6
       if (currentOp === 0x0 || currentOp === 0x1) { // LDA / ADD: MDR ← mem[MAR]
         mdr = readMemory(mar); signal = 'Read';
-        setActive(['reg-mar', 'mem-' + mar, 'reg-mdr', 'bus-dados', 'd-mar', 'd-mem', 'd-mdr', 'd-w-mar-mem', 'd-w-mem-mdr']);
+        setActive(['reg-mar', 'reg-mdr', 'bus-dados', 'd-mar', 'd-cache', 'd-mdr', 'd-w-mar-mem', 'd-w-cache-mdr']
+          .concat(lastHit ? [] : ['mem-' + mar, 'd-mem', 'd-w-mem-cache']));
         log('T6 · MDR ← mem[' + hex2(mar) + ']  = ' + bin8(mdr) + (lastHit ? ' · cache HIT' : ' · cache MISS'));
       } else if (currentOp === 0x2) { // STA: MDR ← ACC
         mdr = acc; signal = 'LoadMDR';
@@ -252,7 +254,7 @@ function tick() {
         log('T7 · ACC ← ACC + MDR  = ' + bin8(acc) + ' (' + acc + ')');
       } else if (currentOp === 0x2) { // STA: mem[MAR] ← MDR
         writeMemory(mar, mdr); signal = 'Write';
-        setActive(['reg-mdr', 'mem-' + mar, 'bus-dados', 'd-mdr', 'd-mem', 'd-w-mdr-mem']);
+        setActive(['reg-mdr', 'mem-' + mar, 'bus-dados', 'd-mdr', 'd-cache', 'd-mem', 'd-w-mdr-cache', 'd-w-cache-mem']);
         log('T7 · mem[' + hex2(mar) + '] ← MDR  = ' + bin8(mdr));
       }
       step = 0; // fim da instrução
