@@ -75,6 +75,7 @@ button { font: inherit; padding: 8px 16px; border: 1px solid var(--border); back
 button:hover { background: #f0f0f0; }
 button.primary { background: var(--active); color: #fff; border-color: var(--active); }
 button.primary:hover { background: #256a29; }
+select { font: inherit; padding: 7px 10px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; }
 .status { margin-left: auto; font-size: 13px; color: var(--muted); font-family: "JetBrains Mono", Consolas, monospace; }
 
 /* Log */
@@ -112,3 +113,29 @@ button.primary:hover { background: #256a29; }
 .diagram-svg .active rect { fill: var(--active-bg); stroke: var(--active); }
 .diagram-svg .active text { fill: var(--active); }
 .diagram-svg line.active { stroke: var(--active); stroke-width: 2.5; }
+
+/* Cache */
+.cache { display: flex; flex-direction: column; gap: 4px; }
+.cache-line {
+  display: grid;
+  grid-template-columns: 24px 52px 64px 1fr;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 12px;
+}
+.cache-line .ci { color: var(--muted); }
+.hitmiss {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 12px;
+  border: 1px solid var(--border);
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.hitmiss.hit { color: #fff; background: var(--active); border-color: var(--active); }
+.hitmiss.miss { color: #fff; background: #c0392b; border-color: #c0392b; }

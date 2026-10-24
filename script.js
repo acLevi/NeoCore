@@ -12,12 +12,38 @@ let signal = '—';    // sinal de controle corrente
 let halted = false;
 let cycle = 0;       // contador global de ciclos de clock
 let runTimer = null;
+const CACHE_SIZE = 4; // linhas da cache (mapeamento direto)
+let cache = [];       // [{ valid, tag, data }]
+let lastHit = null;   // null (sem leitura) | true (hit) | false (miss)
 
 const MNEMONIC = { 0x0: 'LDA', 0x1: 'ADD', 0x2: 'STA', 0x3: 'OUT', 0xF: 'HLT' };
 
 function bin8(v) { return (v & 0xFF).toString(2).padStart(8, '0'); }
 function hex2(v) { return (v & 0xFF).toString(16).padStart(2, '0').toUpperCase(); }
+function bin2(v) { return (v & 0x3).toString(2).padStart(2, '0'); }
 function v(id, txt) { document.getElementById(id).textContent = txt; }
+
+function readMemory(addr) {
+  const index = addr & 0x3;  // addr % 4
+  const tag = addr >> 2;     // addr / 4
+  const line = cache[index];
+  if (line.valid && line.tag === tag) {
+    lastHit = true;          // HIT: dado já está na cache
+    return line.data;
+  }
+  lastHit = false;           // MISS: busca na RAM e guarda na cache
+  line.valid = true;
+  line.tag = tag;
+  line.data = mem[addr];
+  return mem[addr];
+}
+function writeMemory(addr, value) {
+  mem[addr] = value;
+  const index = addr & 0x3;
+  const tag = addr >> 2;
+  const line = cache[index];
+  if (line.valid && line.tag === tag) line.data = value; // write-through
+}
 
 function buildMemory() {
   const box = document.getElementById('memory');
@@ -31,18 +57,71 @@ function buildMemory() {
   }
 }
 
+function buildCache() {
+  const box = document.getElementById('cache');
+  box.innerHTML = '';
+  for (let i = 0; i < CACHE_SIZE; i++) {
+    const line = document.createElement('div');
+    line.className = 'cache-line';
+    line.id = 'cache-' + i;
+    line.innerHTML =
+      '<span class="ci">' + i + '</span>' +
+      '<span class="cv" id="cv-' + i + '">V:0</span>' +
+      '<span class="ct" id="ct-' + i + '">tag:--</span>' +
+      '<span class="cd" id="cd-' + i + '">--------</span>';
+    box.appendChild(line);
+  }
+}
+
+const PROGRAMS = [
+  {
+    id: 'soma53',
+    label: 'soma 5 + 3',
+    load() {
+      mem = new Array(MEM_SIZE).fill(0);
+      mem[0]  = 0x08;  // LDA 8
+      mem[1]  = 0x19;  // ADD 9
+      mem[2]  = 0x2A;  // STA 10
+      mem[3]  = 0x30;  // OUT
+      mem[4]  = 0xF0;  // HLT
+      mem[8]  = 0x05;  // 5
+      mem[9]  = 0x03;  // 3
+      mem[10] = 0x00;  // resultado
+    }
+  },
+  {
+    id: 'soma55',
+    label: 'soma 5 + 5 (cache hit)',
+    load() {
+      mem = new Array(MEM_SIZE).fill(0);
+      mem[0]  = 0x08;  // LDA 8
+      mem[1]  = 0x18;  // ADD 8  → re-lê o endereço 8 (HIT na cache)
+      mem[2]  = 0x2A;  // STA 10
+      mem[3]  = 0x30;  // OUT
+      mem[4]  = 0xF0;  // HLT
+      mem[8]  = 0x05;  // 5
+      mem[10] = 0x00;  // resultado
+    }
+  }
+];
+let currentProgramId = 'soma53';
+
+function currentProgram() {
+  return PROGRAMS.find(p => p.id === currentProgramId) || PROGRAMS[0];
+}
 function loadProgram() {
-  mem = new Array(MEM_SIZE).fill(0);
-  // programa: soma 5 + 3
-  mem[0]  = 0x08;  // 0000 1000 = LDA 8
-  mem[1]  = 0x19;  // 0001 1001 = ADD 9
-  mem[2]  = 0x2A;  // 0010 1010 = STA 10
-  mem[3]  = 0x30;  // 0011 0000 = OUT
-  mem[4]  = 0xF0;  // 1111 0000 = HLT
-  // dados
-  mem[8]  = 0x05;  // 5
-  mem[9]  = 0x03;  // 3
-  mem[10] = 0x00;  // resultado
+  currentProgram().load();
+}
+function buildProgramSelect() {
+  const sel = document.getElementById('program-select');
+  sel.innerHTML = '';
+  PROGRAMS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.label;
+    sel.appendChild(opt);
+  });
+  sel.value = currentProgramId;
 }
 
 function setActive(ids) {
@@ -76,9 +155,9 @@ function tick() {
       log('T0 · MAR ← PC  (' + hex2(mar) + ')');
       step = 1; break;
     case 1: // T1: MDR ← mem[MAR]
-      mdr = mem[mar]; signal = 'Read';
+      mdr = readMemory(mar); signal = 'Read';
       setActive(['reg-mar', 'mem-' + mar, 'reg-mdr', 'bus-dados', 'd-mar', 'd-mem', 'd-mdr', 'd-w-mar-mem', 'd-w-mem-mdr']);
-      log('T1 · MDR ← mem[' + hex2(mar) + ']  = ' + bin8(mdr));
+      log('T1 · MDR ← mem[' + hex2(mar) + ']  = ' + bin8(mdr) + (lastHit ? ' · cache HIT' : ' · cache MISS'));
       step = 2; break;
     case 2: // T2: IR ← MDR
       ir = mdr; signal = 'LoadIR';
@@ -121,9 +200,9 @@ function tick() {
 
     case 6: // T6
       if (currentOp === 0x0 || currentOp === 0x1) { // LDA / ADD: MDR ← mem[MAR]
-        mdr = mem[mar]; signal = 'Read';
+        mdr = readMemory(mar); signal = 'Read';
         setActive(['reg-mar', 'mem-' + mar, 'reg-mdr', 'bus-dados', 'd-mar', 'd-mem', 'd-mdr', 'd-w-mar-mem', 'd-w-mem-mdr']);
-        log('T6 · MDR ← mem[' + hex2(mar) + ']  = ' + bin8(mdr));
+        log('T6 · MDR ← mem[' + hex2(mar) + ']  = ' + bin8(mdr) + (lastHit ? ' · cache HIT' : ' · cache MISS'));
       } else if (currentOp === 0x2) { // STA: MDR ← ACC
         mdr = acc; signal = 'LoadMDR';
         setActive(['reg-acc', 'reg-mdr', 'bus-dados', 'd-acc', 'd-mdr']);
@@ -141,7 +220,7 @@ function tick() {
         setActive(['reg-acc', 'reg-mdr', 'reg-ula', 'bus-dados', 'd-acc', 'd-mdr', 'd-ula', 'd-w-acc-ula']);
         log('T7 · ACC ← ACC + MDR  = ' + bin8(acc) + ' (' + acc + ')');
       } else if (currentOp === 0x2) { // STA: mem[MAR] ← MDR
-        mem[mar] = mdr; signal = 'Write';
+        writeMemory(mar, mdr); signal = 'Write';
         setActive(['reg-mdr', 'mem-' + mar, 'bus-dados', 'd-mdr', 'd-mem', 'd-w-mdr-mem']);
         log('T7 · mem[' + hex2(mar) + '] ← MDR  = ' + bin8(mdr));
       }
@@ -163,6 +242,16 @@ function render() {
   for (let i = 0; i < MEM_SIZE; i++) {
     document.getElementById('mem-' + i).querySelector('.val').textContent = bin8(mem[i]);
   }
+  // cache
+  for (let i = 0; i < CACHE_SIZE; i++) {
+    const line = cache[i];
+    v('cv-' + i, 'V:' + (line.valid ? '1' : '0'));
+    v('ct-' + i, 'tag:' + (line.valid ? bin2(line.tag) : '--'));
+    v('cd-' + i, line.valid ? bin8(line.data) : '--------');
+  }
+  const hm = document.getElementById('hitmiss');
+  if (lastHit === null) { hm.textContent = '—'; hm.className = 'hitmiss'; }
+  else { hm.textContent = lastHit ? 'HIT' : 'MISS'; hm.className = 'hitmiss ' + (lastHit ? 'hit' : 'miss'); }
   document.getElementById('output').textContent = disp;
   document.getElementById('status').textContent = halted ? 'halt' : ('T' + step + ' · ciclo ' + cycle);
 }
@@ -181,15 +270,20 @@ function reset() {
   stopRun();
   pc = mar = mdr = ir = acc = disp = 0;
   step = 0; currentOp = 0; signal = '—'; halted = false; cycle = 0;
+  cache = Array.from({ length: CACHE_SIZE }, () => ({ valid: false, tag: 0, data: 0 }));
+  lastHit = null;
   loadProgram();
   clearActive(); clearLog();
-  log('Reset: programa carregado (soma 5 + 3).', true);
+  log('Reset: programa carregado (' + currentProgram().label + ').', true);
   render();
 }
 
 document.getElementById('btn-step').addEventListener('click', tick);
 document.getElementById('btn-run').addEventListener('click', () => { if (runTimer) stopRun(); else startRun(); });
 document.getElementById('btn-reset').addEventListener('click', reset);
+document.getElementById('program-select').addEventListener('change', (e) => { currentProgramId = e.target.value; reset(); });
 
 buildMemory();
+buildCache();
+buildProgramSelect();
 reset();

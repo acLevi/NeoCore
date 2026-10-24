@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>NeoCore <span>— Simulador de CPU 8 bits</span></h1>
-    <p class="subtitulo">Ciclo fetch–decode–execute · programa de demonstração: soma 5 + 3</p>
+    <p class="subtitulo">Ciclo fetch–decode–execute · programas de demonstração</p>
   </header>
 
   <main>
@@ -19,6 +19,7 @@
         <button id="btn-step" class="primary">Clock</button>
         <button id="btn-run">Rodar</button>
         <button id="btn-reset">Reset</button>
+        <select id="program-select" title="Programa de demonstração"></select>
         <span class="status" id="status">T0</span>
       </section>
 
@@ -77,22 +78,27 @@
         </section>
       </div>
 
+      <!-- Cache -->
+      <section class="panel">
+        <h2>Cache <span class="hint">(4 linhas, mapeamento direto)</span></h2>
+        <div class="cache" id="cache"></div>
+        <div class="hitmiss" id="hitmiss">—</div>
+      </section>
+
       <!-- Memória -->
       <section class="panel">
         <h2>Memória <span class="hint">(16 posições, endereçável pelo operando de 4 bits)</span></h2>
         <div class="memory" id="memory"></div>
       </section>
 
-      <!-- E/S -->
-      <section class="panel">
-        <h2>Saída (E/S)</h2>
-        <div class="output" id="output">0</div>
-      </section>
-
     </div><!-- /.sim -->
 
     <!-- Legenda fixa -->
     <aside class="legend">
+      <section class="panel">
+        <h2>Saída (E/S)</h2>
+        <div class="output" id="output">0</div>
+      </section>
       <section class="panel">
         <h2>Conjunto de instruções <span class="hint">(opcode + operando)</span></h2>
         <table class="isa">
