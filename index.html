@@ -100,6 +100,11 @@
         <div class="output" id="output">0</div>
       </section>
       <section class="panel">
+        <h2>Entrada (E/S) <span class="hint">(clique nas chaves)</span></h2>
+        <div class="switches" id="switches"></div>
+        <div class="input-val">bin <span id="v-input-bin">00000000</span> · <span id="v-input-dec">0</span></div>
+      </section>
+      <section class="panel">
         <h2>Conjunto de instruções <span class="hint">(opcode + operando)</span></h2>
         <table class="isa">
           <tr><th>Opcode</th><th>Mnemônico</th><th>Efeito</th></tr>
@@ -107,6 +112,7 @@
           <tr><td>0001</td><td>ADD addr</td><td>ACC ← ACC + mem[addr]</td></tr>
           <tr><td>0010</td><td>STA addr</td><td>mem[addr] ← ACC</td></tr>
           <tr><td>0011</td><td>OUT</td><td>mostra ACC na saída</td></tr>
+          <tr><td>0100</td><td>IN</td><td>ACC ← chaves</td></tr>
           <tr><td>1111</td><td>HLT</td><td>para o clock</td></tr>
         </table>
       </section>

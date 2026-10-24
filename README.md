@@ -7,6 +7,7 @@ Simulador didático do ciclo **fetch–decode–execute** de uma CPU de 8 bits, 
 - Como uma instrução percorre os componentes da CPU a cada **pulso de clock** (T0…T7).
 - O papel de cada registrador (**PC, MAR, MDR, IR, ACC**), da **ULA**, da **UC** e da memória.
 - Os três barramentos: **endereços, dados e controle**.
+- Dispositivos de **entrada e saída** (chaves DIP + display).
 - O fluxo de dados em um **diagrama de data-path reativo** (caixas + setas que acendem conforme o caminho ativo).
 - A hierarquia de memória com uma **cache** de 4 linhas (mapeamento direto), mostrando **hit/miss** em cada leitura.
 
@@ -22,6 +23,7 @@ Simulador didático do ciclo **fetch–decode–execute** de uma CPU de 8 bits, 
 | `0001` | ADD addr | ACC ← ACC + mem[addr] |
 | `0010` | STA addr | mem[addr] ← ACC |
 | `0011` | OUT | mostra ACC na saída |
+| `0100` | IN | ACC ← chaves |
 | `1111` | HLT | para o clock |
 
 ## Programas de demonstração
@@ -47,6 +49,15 @@ Dá para alternar entre eles no seletor dos controles.
 | 2 | `0010 1010` | STA 10 |
 | 3 | `0011 0000` | OUT |
 | 4 | `1111 0000` | HLT |
+
+**IN + 5** → resultado **chaves + 5** (lê o valor das chaves DIP):
+
+| Endereço | Conteúdo | Mnemônico |
+|---|---|---|
+| 0 | `0100 0000` | IN |
+| 1 | `0001 1000` | ADD 8 |
+| 2 | `0011 0000` | OUT |
+| 3 | `1111 0000` | HLT |
 
 ## Controles
 

@@ -15,8 +15,9 @@ let runTimer = null;
 const CACHE_SIZE = 4; // linhas da cache (mapeamento direto)
 let cache = [];       // [{ valid, tag, data }]
 let lastHit = null;   // null (sem leitura) | true (hit) | false (miss)
+let inputVal = 0;     // valor das 8 chaves de entrada
 
-const MNEMONIC = { 0x0: 'LDA', 0x1: 'ADD', 0x2: 'STA', 0x3: 'OUT', 0xF: 'HLT' };
+const MNEMONIC = { 0x0: 'LDA', 0x1: 'ADD', 0x2: 'STA', 0x3: 'OUT', 0x4: 'IN', 0xF: 'HLT' };
 
 function bin8(v) { return (v & 0xFF).toString(2).padStart(8, '0'); }
 function hex2(v) { return (v & 0xFF).toString(16).padStart(2, '0').toUpperCase(); }
@@ -73,6 +74,19 @@ function buildCache() {
   }
 }
 
+function buildSwitches() {
+  const box = document.getElementById('switches');
+  box.innerHTML = '';
+  for (let i = 7; i >= 0; i--) { // MSB (7) à esquerda, LSB (0) à direita
+    const sw = document.createElement('div');
+    sw.className = 'switch';
+    sw.id = 'sw-' + i;
+    sw.innerHTML = '<span class="bit">' + i + '</span><span class="sval" id="sval-' + i + '">0</span>';
+    sw.addEventListener('click', () => { inputVal ^= (1 << i); render(); });
+    box.appendChild(sw);
+  }
+}
+
 const PROGRAMS = [
   {
     id: 'soma53',
@@ -101,6 +115,18 @@ const PROGRAMS = [
       mem[4]  = 0xF0;  // HLT
       mem[8]  = 0x05;  // 5
       mem[10] = 0x00;  // resultado
+    }
+  },
+  {
+    id: 'in-add',
+    label: 'IN + 5 (usa as chaves)',
+    load() {
+      mem = new Array(MEM_SIZE).fill(0);
+      mem[0] = 0x40;  // IN (0100 0000) → ACC ← chaves
+      mem[1] = 0x18;  // ADD 8
+      mem[2] = 0x30;  // OUT
+      mem[3] = 0xF0;  // HLT
+      mem[8] = 0x05;  // 5
     }
   }
 ];
@@ -189,6 +215,11 @@ function tick() {
         setActive(['reg-acc', 'output', 'bus-dados', 'd-acc', 'd-out', 'd-w-acc-out']);
         log('T5 · OUT: saída ← ACC  = ' + disp);
         step = 0; // fim da instrução
+      } else if (currentOp === 0x4) { // IN
+        acc = inputVal & 0xFF; signal = 'LoadACC';
+        setActive(['reg-acc', 'switches', 'bus-dados', 'd-acc']);
+        log('T5 · IN: ACC ← chaves  = ' + bin8(acc) + ' (' + acc + ')');
+        step = 0; // fim da instrução
       } else if (currentOp === 0xF) { // HLT
         signal = 'Halt';
         setActive(['reg-ir', 'd-ir', 'd-uc']);
@@ -252,6 +283,15 @@ function render() {
   const hm = document.getElementById('hitmiss');
   if (lastHit === null) { hm.textContent = '—'; hm.className = 'hitmiss'; }
   else { hm.textContent = lastHit ? 'HIT' : 'MISS'; hm.className = 'hitmiss ' + (lastHit ? 'hit' : 'miss'); }
+  // chaves de entrada
+  for (let i = 0; i < 8; i++) {
+    const on = (inputVal >> i) & 1;
+    const el = document.getElementById('sval-' + i);
+    el.textContent = on ? '1' : '0';
+    el.parentElement.classList.toggle('on', on === 1);
+  }
+  v('v-input-bin', bin8(inputVal));
+  v('v-input-dec', String(inputVal));
   document.getElementById('output').textContent = disp;
   document.getElementById('status').textContent = halted ? 'halt' : ('T' + step + ' · ciclo ' + cycle);
 }
@@ -285,5 +325,6 @@ document.getElementById('program-select').addEventListener('change', (e) => { cu
 
 buildMemory();
 buildCache();
+buildSwitches();
 buildProgramSelect();
 reset();

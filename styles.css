@@ -139,3 +139,23 @@ select { font: inherit; padding: 7px 10px; border: 1px solid var(--border); back
 }
 .hitmiss.hit { color: #fff; background: var(--active); border-color: var(--active); }
 .hitmiss.miss { color: #fff; background: #c0392b; border-color: #c0392b; }
+
+/* Chaves de entrada */
+.switches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 4px; border: 1px solid transparent; transition: border-color .1s, background .1s; }
+.switches.active { border-color: var(--active); background: var(--active-bg); }
+.switch {
+  border: 1px solid var(--border);
+  padding: 5px 0 4px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  transition: background .1s, border-color .1s;
+}
+.switch:hover { background: #f0f0f0; }
+.switch .bit { display: block; font-size: 9px; color: var(--muted); line-height: 1; }
+.switch .sval { display: block; font-size: 14px; margin-top: 2px; }
+.switch.on { background: var(--active); border-color: var(--active); }
+.switch.on .sval { color: #fff; }
+.switch.on .bit { color: #c8e6c9; }
+.input-val { margin-top: 8px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; color: var(--muted); }
