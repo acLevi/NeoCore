@@ -1,0 +1,114 @@
+:root {
+  --bg: #fafafa;
+  --panel: #ffffff;
+  --border: #c8c8c8;
+  --text: #1a1a1a;
+  --muted: #5a5a5a;
+  --active: #2e7d32;
+  --active-bg: #e8f5e9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--panel); }
+header h1 { margin: 0; font-size: 20px; }
+header h1 span { font-weight: 400; color: var(--muted); font-size: 15px; }
+header .subtitulo { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+/* Layout: simulador à esquerda, legenda fixa à direita */
+main {
+  padding: 16px 20px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 14px;
+  align-items: start;
+}
+.sim { display: grid; gap: 14px; }
+.legend { position: sticky; top: 16px; display: grid; gap: 14px; }
+
+.panel { background: var(--panel); border: 1px solid var(--border); padding: 12px 14px; }
+.panel h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+.panel h2 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); font-size: 12px; }
+
+/* Registradores */
+.regs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.reg {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 8px 10px;
+  display: flex; flex-direction: column; align-items: center;
+  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+  transition: border-color .1s, background .1s;
+}
+.reg .label { font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.reg .val { font-size: 15px; margin-top: 4px; }
+.reg .hex { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* Barramentos */
+.bus { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px dashed var(--border); margin-bottom: 6px; font-family: "JetBrains Mono", Consolas, monospace; }
+.bus:last-child { margin-bottom: 0; }
+.bus-label { font-size: 11px; color: var(--muted); min-width: 80px; }
+.bus-val { font-size: 14px; }
+
+/* Memória */
+.memory { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.mem { border: 1px solid var(--border); padding: 6px 4px; text-align: center; font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; transition: border-color .1s, background .1s; }
+.mem .addr { display: block; font-size: 10px; color: var(--muted); }
+.mem .val { display: block; margin-top: 2px; }
+
+/* E/S */
+.output { font-family: "JetBrains Mono", Consolas, monospace; font-size: 34px; border: 1px solid var(--border); padding: 10px; text-align: center; background: #f0f0f0; }
+
+/* Controles */
+.controls { display: flex; align-items: center; gap: 8px; position: sticky; top: 12px; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+button { font: inherit; padding: 8px 16px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; }
+button:hover { background: #f0f0f0; }
+button.primary { background: var(--active); color: #fff; border-color: var(--active); }
+button.primary:hover { background: #256a29; }
+.status { margin-left: auto; font-size: 13px; color: var(--muted); font-family: "JetBrains Mono", Consolas, monospace; }
+
+/* Log */
+.log { margin: 0; padding-left: 0; list-style: none; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; max-height: 220px; overflow-y: auto; }
+.log li { margin-bottom: 2px; }
+
+/* Elemento ativo (registrador/barramento/célula no passo corrente) */
+.active { border-color: var(--active) !important; color: var(--active); background: var(--active-bg); font-weight: 600; }
+
+/* ISA (legenda) */
+.isa { border-collapse: collapse; font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; width: 100%; }
+.isa th, .isa td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; }
+.isa th { background: #f0f0f0; }
+.legend .isa { font-size: 12px; }
+.legend .isa th, .legend .isa td { padding: 5px 6px; }
+
+/* Em telas estreitas, empilha tudo de volta */
+@media (max-width: 820px) {
+  main { grid-template-columns: 1fr; }
+  .legend { position: static; }
+  .views { grid-template-columns: 1fr; }
+}
+
+/* Duas vistas lado a lado (registradores | diagrama) */
+.views { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* Título secundário dentro do mesmo painel */
+.panel h2:not(:first-child) { margin-top: 16px; }
+
+/* Diagrama (SVG) */
+.diagram-svg { width: 100%; height: auto; display: block; }
+.diagram-svg rect { fill: #fff; stroke: var(--border); stroke-width: 1.5; }
+.diagram-svg line { stroke: #5a5a5a; stroke-width: 1.5; }
+.diagram-svg text { fill: var(--text); font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+.diagram-svg .active rect { fill: var(--active-bg); stroke: var(--active); }
+.diagram-svg .active text { fill: var(--active); }
+.diagram-svg line.active { stroke: var(--active); stroke-width: 2.5; }

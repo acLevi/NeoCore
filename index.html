@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeoCore — Simulador de CPU 8 bits</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>NeoCore <span>— Simulador de CPU 8 bits</span></h1>
+    <p class="subtitulo">Ciclo fetch–decode–execute · programa de demonstração: soma 5 + 3</p>
+  </header>
+
+  <main>
+    <div class="sim">
+      <!-- Controles (fixos no topo) -->
+      <section class="panel controls">
+        <button id="btn-step" class="primary">Clock</button>
+        <button id="btn-run">Rodar</button>
+        <button id="btn-reset">Reset</button>
+        <span class="status" id="status">T0</span>
+      </section>
+
+      <!-- Duas vistas lado a lado -->
+      <div class="views">
+        <!-- Vista 1: registradores + barramentos -->
+        <section class="panel">
+          <h2>Registradores</h2>
+          <div class="regs">
+            <div class="reg" id="reg-pc"><span class="label">PC</span><span class="val" id="v-pc">00000000</span><span class="hex" id="h-pc">0x00</span></div>
+            <div class="reg" id="reg-mar"><span class="label">MAR</span><span class="val" id="v-mar">00000000</span><span class="hex" id="h-mar">0x00</span></div>
+            <div class="reg" id="reg-mdr"><span class="label">MDR</span><span class="val" id="v-mdr">00000000</span><span class="hex" id="h-mdr">0x00</span></div>
+            <div class="reg" id="reg-ir"><span class="label">IR</span><span class="val" id="v-ir">00000000</span><span class="hex" id="h-ir">0x00</span></div>
+            <div class="reg" id="reg-acc"><span class="label">ACC</span><span class="val" id="v-acc">00000000</span><span class="hex" id="h-acc">0x00</span></div>
+            <div class="reg" id="reg-ula"><span class="label">ULA</span><span class="val" id="v-ula">soma</span></div>
+          </div>
+
+          <h2>Barramentos</h2>
+          <div class="bus" id="bus-enderecos"><span class="bus-label">Endereços</span><span class="bus-val" id="v-bus-enderecos">0x00</span></div>
+          <div class="bus" id="bus-dados"><span class="bus-label">Dados</span><span class="bus-val" id="v-bus-dados">00000000</span></div>
+          <div class="bus" id="bus-controle"><span class="bus-label">Controle</span><span class="bus-val" id="v-bus-controle">—</span></div>
+        </section>
+
+        <!-- Vista 2: diagrama de data-path -->
+        <section class="panel">
+          <h2>Diagrama <span class="hint">(fluxo de dados)</span></h2>
+          <svg class="diagram-svg" viewBox="0 0 460 470" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#5a5a5a"/>
+              </marker>
+            </defs>
+
+            <!-- fios / setas -->
+            <line id="d-w-pc-mar"  x1="135" y1="51"  x2="135" y2="83"  marker-end="url(#arr)"/>
+            <line id="d-w-mar-mem" x1="135" y1="121" x2="135" y2="158" marker-end="url(#arr)"/>
+            <line id="d-w-mem-mdr" x1="122" y1="208" x2="122" y2="253" marker-end="url(#arr)"/>
+            <line id="d-w-mdr-mem" x1="148" y1="253" x2="148" y2="208" marker-end="url(#arr)"/>
+            <line id="d-w-mdr-ir"  x1="105" y1="291" x2="58"  y2="343" marker-end="url(#arr)"/>
+            <line id="d-w-mdr-acc" x1="165" y1="291" x2="206" y2="343" marker-end="url(#arr)"/>
+            <line id="d-w-acc-ula" x1="210" y1="381" x2="210" y2="418" marker-end="url(#arr)"/>
+            <line id="d-w-acc-out" x1="250" y1="363" x2="358" y2="363" marker-end="url(#arr)"/>
+            <line id="d-w-uc-mem"  x1="360" y1="175" x2="192" y2="175" marker-end="url(#arr)" stroke-dasharray="4 3"/>
+
+            <!-- caixas -->
+            <g id="d-pc"><rect x="95" y="15" width="80" height="36" rx="5"/><text x="135" y="33">PC</text></g>
+            <g id="d-mar"><rect x="95" y="85" width="80" height="36" rx="5"/><text x="135" y="103">MAR</text></g>
+            <g id="d-mem"><rect x="75" y="160" width="110" height="48" rx="5"/><text x="130" y="184">Memória</text></g>
+            <g id="d-mdr"><rect x="95" y="255" width="80" height="36" rx="5"/><text x="135" y="273">MDR</text></g>
+            <g id="d-ir"><rect x="20" y="345" width="80" height="36" rx="5"/><text x="60" y="363">IR</text></g>
+            <g id="d-acc"><rect x="170" y="345" width="80" height="36" rx="5"/><text x="210" y="363">ACC</text></g>
+            <g id="d-ula"><rect x="170" y="420" width="80" height="36" rx="5"/><text x="210" y="438">ULA</text></g>
+            <g id="d-uc"><rect x="360" y="160" width="90" height="48" rx="5"/><text x="405" y="184">UC</text></g>
+            <g id="d-out"><rect x="360" y="345" width="90" height="36" rx="5"/><text x="405" y="363">Saída</text></g>
+          </svg>
+        </section>
+      </div>
+
+      <!-- Memória -->
+      <section class="panel">
+        <h2>Memória <span class="hint">(16 posições, endereçável pelo operando de 4 bits)</span></h2>
+        <div class="memory" id="memory"></div>
+      </section>
+
+      <!-- E/S -->
+      <section class="panel">
+        <h2>Saída (E/S)</h2>
+        <div class="output" id="output">0</div>
+      </section>
+
+    </div><!-- /.sim -->
+
+    <!-- Legenda fixa -->
+    <aside class="legend">
+      <section class="panel">
+        <h2>Conjunto de instruções <span class="hint">(opcode + operando)</span></h2>
+        <table class="isa">
+          <tr><th>Opcode</th><th>Mnemônico</th><th>Efeito</th></tr>
+          <tr><td>0000</td><td>LDA addr</td><td>ACC ← mem[addr]</td></tr>
+          <tr><td>0001</td><td>ADD addr</td><td>ACC ← ACC + mem[addr]</td></tr>
+          <tr><td>0010</td><td>STA addr</td><td>mem[addr] ← ACC</td></tr>
+          <tr><td>0011</td><td>OUT</td><td>mostra ACC na saída</td></tr>
+          <tr><td>1111</td><td>HLT</td><td>para o clock</td></tr>
+        </table>
+      </section>
+      <section class="panel">
+        <h2>Micro-operações <span class="hint">(ciclos de clock)</span></h2>
+        <ul class="log" id="log"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
