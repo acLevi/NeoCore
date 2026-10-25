@@ -16,6 +16,7 @@ const CACHE_SIZE = 4; // linhas da cache (mapeamento direto)
 let cache = [];       // [{ valid, tag, data }]
 let lastHit = null;   // null (sem leitura) | true (hit) | false (miss)
 let inputVal = 0;     // valor das 8 chaves de entrada
+let written = { mar: false, mdr: false, ir: false, acc: false }; // registradores já escritos
 
 const MNEMONIC = { 0x0: 'LDA', 0x1: 'ADD', 0x2: 'STA', 0x3: 'OUT', 0x4: 'IN', 0xF: 'HLT' };
 
@@ -260,15 +261,20 @@ function tick() {
       step = 0; // fim da instrução
       break;
   }
+  // marcar registradores efetivamente escritos neste micro-passo
+  if (signal === 'PC→MAR · LoadMAR' || signal === 'LoadMAR') written.mar = true;
+  else if (signal === 'Read' || signal === 'LoadMDR') written.mdr = true;
+  else if (signal === 'LoadIR') written.ir = true;
+  else if (signal === 'LoadACC' || signal === 'ALU') written.acc = true;
   render();
 }
 
 function render() {
   v('v-pc', bin8(pc)); v('h-pc', hex2(pc));
-  v('v-mar', bin8(mar)); v('h-mar', hex2(mar));
-  v('v-mdr', bin8(mdr)); v('h-mdr', hex2(mdr));
-  v('v-ir', bin8(ir)); v('h-ir', hex2(ir));
-  v('v-acc', bin8(acc)); v('h-acc', hex2(acc));
+  v('v-mar', written.mar ? bin8(mar) : '-'); v('h-mar', written.mar ? hex2(mar) : '');
+  v('v-mdr', written.mdr ? bin8(mdr) : '-'); v('h-mdr', written.mdr ? hex2(mdr) : '');
+  v('v-ir', written.ir ? bin8(ir) : '-'); v('h-ir', written.ir ? hex2(ir) : '');
+  v('v-acc', written.acc ? bin8(acc) : '-'); v('h-acc', written.acc ? hex2(acc) : '');
   v('v-bus-enderecos', hex2(mar));
   v('v-bus-dados', bin8(mdr));
   v('v-bus-controle', signal);
@@ -314,6 +320,7 @@ function reset() {
   step = 0; currentOp = 0; signal = '—'; halted = false; cycle = 0;
   cache = Array.from({ length: CACHE_SIZE }, () => ({ valid: false, tag: 0, data: 0 }));
   lastHit = null;
+  written = { mar: false, mdr: false, ir: false, acc: false };
   loadProgram();
   clearActive(); clearLog();
   log('Reset: programa carregado (' + currentProgram().label + ').', true);
