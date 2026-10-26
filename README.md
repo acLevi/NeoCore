@@ -2,6 +2,8 @@
 
 Simulador didático do ciclo **fetch–decode–execute** de uma CPU de 8 bits, para a disciplina de Arquitetura e Organização de Computadores (trabalho *NeoCore Computer Lab*).
 
+Acesse o site em: https://aclevi.github.io/NeoCore/
+
 ## O que demonstra
 
 - Como uma instrução percorre os componentes da CPU a cada **pulso de clock** (T0…T7).
