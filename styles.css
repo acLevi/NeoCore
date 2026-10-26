@@ -40,6 +40,7 @@ main {
 .panel { background: var(--panel); border: 1px solid var(--border); padding: 12px 14px; }
 .panel h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
 .panel h2 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); font-size: 12px; }
+.panel:hover { border: 2px outset var(--active); }
 
 /* Registradores */
 .regs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
